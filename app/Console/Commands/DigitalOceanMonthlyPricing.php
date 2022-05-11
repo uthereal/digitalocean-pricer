@@ -45,12 +45,12 @@ class DigitalOceanMonthlyPricing extends Command
         $this->line('');
 
         foreach ($this->digitalOceanApi->projects($token) as $project) {
-            $this->line("Project <options=bold>{$project['name']}</> with UUID <options=bold>{$project['id']}</>", verbosity: 'v');
+            $this->line("Project <options=bold>{$project['name']}</> with UUID <options=bold>{$project['id']}</>", verbosity: 'normal');
 
             $sum = 0;
             $resourceCount = 0;
             foreach ($this->digitalOceanApi->projectResources($token, $project['id']) as $resource) {
-                $this->line("\tResource: {$resource['links']['self']}", verbosity: 'vv');
+                $this->line("\tResource: {$resource['links']['self']}", verbosity: 'v');
 
                 $price = 0;
                 if (Str::contains($resource['links']['self'], 'droplets')) {
@@ -78,6 +78,7 @@ class DigitalOceanMonthlyPricing extends Command
             ]);
         }
 
+        $this->line('');
         $this->table(
             ['Client', 'Cost per Month (USD)', 'Cost per Year (USD)', 'Resource Count'],
             $totals->map(fn(array $item) => Arr::only($item, ['client', 'cost_formatted', 'cost_year_formatted', 'resource_count'])),

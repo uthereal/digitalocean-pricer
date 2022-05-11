@@ -1,0 +1,50 @@
+# Ignore Vagrant items
+/.vagrant
+Homestead.yaml
+Homestead.json
+Vagrantfile
+
+# Mac items
+.DS_Store
+
+# Ignore vendor code
+/node_modules
+/vendor
+npm-debug.log
+yarn-error.log
+
+# Ignore PHPUnit
+.phpunit.result.cache
+phpunit.xml
+
+# Ignore PHPCS
+.php_cs.cache
+
+# Ignore IDE Items
+/.idea
+.phpstorm.meta.php
+_ide_helper.php
+_ide_helper_models.php
+
+# Ignore application built resources
+/public/build/
+/public/css/
+/public/images/
+/public/img/
+/public/static/
+/public/js/
+/public/nova/
+/public/nova-assets/
+/public/fonts/
+/public/translations/
+/public/vendor/
+/public/hot
+/public/storage
+/public/mix-manifest.json
+/public/sitemap.xml
+
+ # Ignore application secrets
+/storage/*.key
+.env
+forge.yaml
+auth.json

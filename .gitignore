@@ -15,7 +15,6 @@ yarn-error.log
 
 # Ignore PHPUnit
 .phpunit.result.cache
-phpunit.xml
 
 # Ignore PHPCS
 .php_cs.cache

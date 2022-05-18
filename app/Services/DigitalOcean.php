@@ -28,6 +28,7 @@ class DigitalOcean
      * @param  string  $token
      * @param  string  $url
      * @return array
+     * @throws \Exception
      */
     public function url(string $token, string $url): array
     {
@@ -72,6 +73,22 @@ class DigitalOcean
                 ])
                 ->json('resources', []);
         });
+    }
+
+    /**
+     * Get a snapshot by id
+     *
+     * @param  string  $token
+     * @param  string  $id
+     * @return array
+     * @throws \Exception
+     */
+    public function snapshot(string $token, string $id): array
+    {
+        return Http::withToken($token)
+            ->acceptJson()
+            ->get("{$this::$base}/{$this::$version}/snapshots/{$id}")
+            ->json();
     }
 
     /**

@@ -4,7 +4,9 @@ namespace App\Commands;
 
 use App\DigitalOcean\Database;
 use App\DigitalOcean\Droplet;
+use App\DigitalOcean\FloatingIP;
 use App\DigitalOcean\Space;
+use App\DigitalOcean\Volume;
 use App\Services\DigitalOcean;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
@@ -14,7 +16,7 @@ use LaravelZero\Framework\Commands\Command;
 class DigitalOceanMonthlyPricing extends Command
 {
     /** @var string */
-    protected $signature = 'do:monthly-cost
+    protected $signature = 'monthly-cost
                             {token : DigitalOcean Api Token}';
 
     /** @var string */
@@ -33,6 +35,7 @@ class DigitalOceanMonthlyPricing extends Command
      * Execute the console command.
      *
      * @return int
+     * @throws \Illuminate\Contracts\Container\BindingResolutionException
      */
     public function handle(): int
     {
@@ -41,8 +44,8 @@ class DigitalOceanMonthlyPricing extends Command
 
         // Alerts
         $this->alert('ALERT');
-        $this->warn('DigitalOcean Spaces API does not allow for the full computation of pricing. Actual pricing may vary');
-        $this->line('');
+        $this->warn('DigitalOcean Spaces API does not allow for the full computation of pricing. Actual pricing may vary!');
+        $this->newLine();
 
         foreach ($this->digitalOceanApi->projects($token) as $project) {
             $this->line("Project <options=bold>{$project['name']}</> with UUID <options=bold>{$project['id']}</>", verbosity: 'normal');
@@ -55,6 +58,10 @@ class DigitalOceanMonthlyPricing extends Command
                 $price = 0;
                 if (Str::contains($resource['links']['self'], 'droplets')) {
                     $price = Droplet::FromUrl($resource['links']['self'], $token)->getMonthlyCost();
+                } else if (Str::contains($resource['links']['self'], 'floating_ips')) {
+                    $price = FloatingIP::FromUrl($resource['links']['self'], $token)->getMonthlyCost();
+                } else if (Str::contains($resource['links']['self'], 'volumes')) {
+                    $price = Volume::FromUrl($resource['links']['self'], $token)->getMonthlyCost();
                 } else if (Str::contains($resource['links']['self'], 'databases')) {
                     $price = Database::FromUrl($resource['links']['self'], $token)->getMonthlyCost();
                 } else if (Str::contains($resource['links']['self'], 'digitaloceanspaces')) {
@@ -78,14 +85,14 @@ class DigitalOceanMonthlyPricing extends Command
             ]);
         }
 
-        $this->line('');
+        $this->newLine();
         $this->table(
             ['Client', 'Cost per Month (USD)', 'Cost per Year (USD)', 'Resource Count'],
             $totals->map(fn(array $item) => Arr::only($item, ['client', 'cost_formatted', 'cost_year_formatted', 'resource_count'])),
         );
         $total = '$ '.number_format($totals->sum('cost'), 2);
         $this->line("Total: <fg=green;options=bold>{$total}</>");
-        $this->line('');
+        $this->newLine();
 
         return static::SUCCESS;
     }

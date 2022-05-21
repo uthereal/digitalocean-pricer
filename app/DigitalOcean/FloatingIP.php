@@ -2,8 +2,6 @@
 
 namespace App\DigitalOcean;
 
-use Illuminate\Support\Arr;
-
 class FloatingIP extends Resource
 {
     /** @var float */

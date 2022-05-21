@@ -2,7 +2,6 @@
 
 namespace App\DigitalOcean;
 
-use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
 
@@ -36,7 +35,7 @@ class Database extends Resource
     {
         $size = $this->data['database']['size'];
         $count = $this->data['database']['num_nodes'];
-        $engine =  $this->data['database']['engine'];
+        $engine = $this->data['database']['engine'];
         $standByNodes = $count - 1;
 
         $price = $this::Prices()[$engine][$size];

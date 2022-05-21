@@ -2,7 +2,6 @@
 
 namespace App\DigitalOcean;
 
-use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
 
@@ -47,7 +46,7 @@ class Kubernetes extends Resource
             $price += $node['monthly_price'] * $nodeCount;
         }
 
-        if(!$highAvailabilityIsFree) {
+        if (!$highAvailabilityIsFree) {
             $price += $haPrice;
         }
 

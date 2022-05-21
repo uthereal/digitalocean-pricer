@@ -2,11 +2,9 @@
 
 namespace App\DigitalOcean;
 
-use Illuminate\Support\Arr;
-
 class LoadBalancer extends Resource
 {
-    /** @var float  */
+    /** @var float */
     protected static float $PricePerNode = 10.00;
 
     /**

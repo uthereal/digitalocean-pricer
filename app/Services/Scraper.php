@@ -52,7 +52,7 @@ class Scraper
             ])->collect('data.DBaaSGetPlans')
             ->filter(fn($engine) => is_array($engine))
             ->map(function (array $engine) {
-                return collect($engine['plans'])->mapWithKeys(function($plan) {
+                return collect($engine['plans'])->mapWithKeys(function ($plan) {
                     $planSlug = $plan['droplet_slug_name'];
 
                     // Prefix basic nodes with "db-"

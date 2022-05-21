@@ -45,7 +45,6 @@ abstract class Resource
         return $this->remember(__FUNCTION__, fn() => $this->name());
     }
 
-
     /**
      * Compute the monthly cost for this resource
      *

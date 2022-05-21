@@ -24,7 +24,7 @@ class AppPlatform extends Resource
      */
     protected function name(): string
     {
-       return $this->data['app']['spec']['name'];
+        return $this->data['app']['spec']['name'];
     }
 
     /**

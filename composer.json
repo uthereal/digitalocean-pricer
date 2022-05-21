@@ -1,7 +1,12 @@
 {
     "name": "uthereal/digitalocean-pricer",
     "description": "DigitalOcean pricer is a tool used to gain insight into the various costs associated with your infrastructure.",
-    "keywords": ["uthereal", "digitalocean", "price", "tracker"],
+    "keywords": [
+        "uthereal",
+        "digitalocean",
+        "price",
+        "tracker"
+    ],
     "license": "MIT",
     "require": {
         "php": "^8.1",

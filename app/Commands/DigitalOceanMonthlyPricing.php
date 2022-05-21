@@ -112,8 +112,9 @@ class DigitalOceanMonthlyPricing extends Command
 
         // Price container registry if exists
         $this->line('Pricing out container registry');
-        if ($data = $this->digitalOceanApi->containerRegistry($token)) {
-            $resource = ContainerRegistry::make($this->digitalOceanApi, $data, $token);
+        $containerRegistry = $this->digitalOceanApi->containerRegistry($token);
+        if (($containerRegistry['id'] ?? '') != 'not_found') {
+            $resource = ContainerRegistry::make($this->digitalOceanApi, $containerRegistry, $token);
             $projects->push(
                 Collection::make([
                     'name' => 'Container Registry',

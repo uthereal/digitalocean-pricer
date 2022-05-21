@@ -20,6 +20,6 @@ Second, make sure you have added composer's `bin` path to your system's `GLOBAL`
 `https://gprivate.com/5z8q5`
 
 ### Running
-`php do-pricer monthly-cost [DIGITALOCEAN TOKEN]`
+`do-pricer monthly-cost [DIGITALOCEAN TOKEN]`
 
 ![Execution](docs/default.png)

@@ -2,27 +2,38 @@
 
 namespace App\DigitalOcean;
 
-use Illuminate\Support\Arr;
-
 class Droplet extends Resource
 {
     /**
+     * @inheritDoc
+     */
+    protected function name(): string
+    {
+        return $this->data['droplet']['name'];
+    }
+
+    /**
+     * @link https://docs.digitalocean.com/products/droplets/#plans-and-pricing
      * @return float
      * @throws \Exception
      */
-    public function getMonthlyCost(): float
+    public function monthlyCost(): float
     {
-        $price = Arr::get($this->data, 'droplet.size.price_monthly');
+        $price = $this->data['droplet']['size']['price_monthly'];
 
-        foreach (Arr::get($this->data, 'droplet.snapshot_ids', []) as $snapshot) {
+        // Compute backup costs
+        if (in_array('backups', $this->data['droplet']['features'])) {
+            $price += Backup::make($this->digitalOceanApi, $this->data, $this->token)->getMonthlyCost();
+        }
+
+        // Compute snapshot costs
+        foreach ($this->data['droplet']['snapshot_ids'] as $snapshot) {
             $price += Snapshot::make(
                 $this->digitalOceanApi,
                 $this->digitalOceanApi->snapshot($this->token, $snapshot),
                 $this->token
             )->getMonthlyCost();
         }
-
-        abort_if(is_null($price), 500, "Price for droplet not found");
 
         return $price;
     }

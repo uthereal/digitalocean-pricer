@@ -57,6 +57,25 @@ class DigitalOcean
     }
 
     /**
+     * Return a lazy collection of custom images from the API
+     *
+     * @param  string  $token
+     * @return \Illuminate\Support\LazyCollection
+     */
+    public function customImages(string $token): LazyCollection
+    {
+        return $this->lazyCollection(function ($page) use ($token) {
+            return Http::withToken($token)
+                ->acceptJson()
+                ->get("{$this::$base}/{$this::$version}/images", [
+                    'page' => $page,
+                    'private' => 'true',
+                ])
+                ->json('images', []);
+        });
+    }
+
+    /**
      * Return a list of resources for a project
      *
      * @param  string  $token
@@ -73,6 +92,20 @@ class DigitalOcean
                 ])
                 ->json('resources', []);
         });
+    }
+
+    /**
+     * Get a container registry
+     *
+     * @param  string  $token
+     * @return array
+     */
+    public function containerRegistry(string $token): array
+    {
+        return Http::withToken($token)
+            ->acceptJson()
+            ->get("{$this::$base}/{$this::$version}/registry")
+            ->json();
     }
 
     /**

@@ -3,11 +3,13 @@
 namespace App\DigitalOcean;
 
 use App\Concerns\Makeable;
+use App\Concerns\Memoize;
 use App\Services\DigitalOcean;
 
 abstract class Resource
 {
     use Makeable;
+    use Memoize;
 
     /**
      * @param  \App\Services\DigitalOcean  $digitalOceanApi
@@ -34,9 +36,37 @@ abstract class Resource
     }
 
     /**
-     * Compute the monthly cost for this resource.
+     * Get the name of this resource
+     *
+     * @return string
+     */
+    public function getName(): string
+    {
+        return $this->remember(__FUNCTION__, fn() => $this->name());
+    }
+
+
+    /**
+     * Compute the monthly cost for this resource
      *
      * @return float
      */
-    abstract public function getMonthlyCost(): float;
+    public function getMonthlyCost(): float
+    {
+        return $this->remember(__FUNCTION__, fn() => $this->monthlyCost());
+    }
+
+    /**
+     * Get the name of this resource
+     *
+     * @return string
+     */
+    abstract protected function name(): string;
+
+    /**
+     * Compute the monthly cost for this resource
+     *
+     * @return float
+     */
+    abstract protected function monthlyCost(): float;
 }

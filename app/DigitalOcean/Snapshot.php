@@ -2,30 +2,32 @@
 
 namespace App\DigitalOcean;
 
-use App\Services\DigitalOcean;
-use Illuminate\Support\Arr;
-
 class Snapshot extends Resource
 {
     /**
-     * @link https://docs.digitalocean.com/products/images/snapshots/
      * @var float[]
      */
-    protected static array $PricePerGB =[
+    protected static array $PricePerGB = [
         'droplet' => 0.05,
         'volume' => 0.05,
     ];
 
     /**
+     * @inheritDoc
+     */
+    protected function name(): string
+    {
+        return $this->data['snapshot']['name'];
+    }
+
+    /**
+     * @link https://docs.digitalocean.com/products/images/snapshots/details/pricing
      * @return float
      */
-    public function getMonthlyCost(): float
+    public function monthlyCost(): float
     {
-        $type=Arr::get($this->data, 'snapshot.resource_type');
-        $pricePerGb = Arr::get($this::$PricePerGB, $type);
+        $type = $this->data['snapshot']['resource_type'];
 
-        abort_if(is_null($pricePerGb), 500, "Unknown price per gb for {$type}");
-
-        return $pricePerGb*  Arr::get($this->data, 'snapshot.size_gigabytes');
+        return $this->data['snapshot']['size_gigabytes'] * self::$PricePerGB[$type];
     }
 }

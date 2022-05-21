@@ -1,0 +1,12 @@
+{
+    "basic-xxs": {"monthly_price": 5},
+    "basic-xs": {"monthly_price": 10},
+    "basic-s": {"monthly_price": 20},
+    "basic-m": {"monthly_price": 40},
+    "professional-xs": {"monthly_price": 12},
+    "professional-s": {"monthly_price": 25},
+    "professional-m": {"monthly_price": 50},
+    "professional-1l": {"monthly_price": 75},
+    "professional-l": {"monthly_price": 150},
+    "professional-xl": {"monthly_price": 300}
+}

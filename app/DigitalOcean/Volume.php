@@ -2,21 +2,25 @@
 
 namespace App\DigitalOcean;
 
-use Illuminate\Support\Arr;
-
 class Volume extends Resource
 {
-    /**
-     * @link
-     * @var float
-     */
+    /** @var float */
     protected static float $PricePerGb = 0.10;
 
     /**
+     * @inheritDoc
+     */
+    protected function name(): string
+    {
+        return $this->data['volume']['id'];
+    }
+
+    /**
+     * @link https://docs.digitalocean.com/products/volumes/details/pricing
      * @return float
      */
-    public function getMonthlyCost(): float
+    public function monthlyCost(): float
     {
-        return $this::$PricePerGb * Arr::get($this->data, 'volume.size_gigabytes');
+        return $this->data['volume']['size_gigabytes'] * self::$PricePerGb;
     }
 }

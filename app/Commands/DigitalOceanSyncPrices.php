@@ -45,6 +45,21 @@ class DigitalOceanSyncPrices extends Command
             return static::FAILURE;
         }
 
+        // APP PLATFORM SYNC \\
+        $this->newLine();
+        $this->line("Attempting to Load App Platform Prices");
+        $this->scraper->digitalOceanAppPLatformPrices($cookie)
+            ->tap(function($prices) {
+                if($prices->count() > 0) {
+                    $this->info("\tWriting out pricing");
+                    File::put(base_path('content/prices/app-platform.json'), $prices->toJson());
+                } else {
+                    $this->error("\tFailed to load pricing");
+                }
+            });
+        // APP PLATFORM SYNC \\
+
+        // DATABASE SYNC \\
         $this->newLine();
         $this->line("Attempting to Load DigitalOcean Database Prices");
         $this->scraper->digitalOceanDatabasePrices($cookie)
@@ -56,8 +71,25 @@ class DigitalOceanSyncPrices extends Command
                 $this->error("\tFailed to load pricing");
             }
         });
+        // DATABASE SYNC \\
 
+        // KUBERNETES SYNC \\
+        $this->newLine();
+        $this->line("Attempting to Load Kubernetes Prices");
+        $this->scraper->digitalOceanKubernetesPrices($cookie)
+            ->tap(function($prices) {
+                if($prices->count() > 0) {
+                    $this->info("\tWriting out pricing");
+                    File::put(base_path('content/prices/kubernetes.json'), $prices->toJson());
+                } else {
+                    $this->error("\tFailed to load pricing");
+                }
+            });
+        // KUBERNETES SYNC \\
+
+        $this->newLine();
         $this->line('Done');
+
         return static::SUCCESS;
     }
 }

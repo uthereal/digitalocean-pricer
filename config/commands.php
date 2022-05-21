@@ -1,5 +1,7 @@
 <?php
 
+use App\Commands;
+
 return [
 
     /*
@@ -76,7 +78,7 @@ return [
     */
 
     'remove' => [
-        // ..
+        Commands\DigitalOceanSyncPrices::class,
     ],
 
 ];

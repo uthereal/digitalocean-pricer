@@ -6,19 +6,25 @@ use Illuminate\Support\Arr;
 
 class FloatingIP extends Resource
 {
-    /**
-     * @link https://docs.digitalocean.com/products/networking/floating-ips
-     * @var float
-     */
+    /** @var float */
     protected static float $NotAssignedPrice = 4.00;
 
     /**
-     * @return float
+     * @inheritDoc
      */
-    public function getMonthlyCost(): float
+    protected function name(): string
     {
-        $droplet = Arr::get($this->data, 'floating_ip.droplet');
+        return $this->data['floating_ip']['ip'];
+    }
 
-        return $droplet ? 0.00 : $this::$NotAssignedPrice;
+    /**
+     * @return float
+     * @link https://docs.digitalocean.com/products/networking/floating-ips/details/pricing
+     */
+    public function monthlyCost(): float
+    {
+        $droplet = $this->data['floating_ip']['droplet'];
+
+        return $droplet ? 0.00 : self::$NotAssignedPrice;
     }
 }

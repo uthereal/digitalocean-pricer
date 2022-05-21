@@ -2,13 +2,19 @@
 
 namespace App\Commands;
 
+use App\DigitalOcean\AppPlatform;
+use App\DigitalOcean\ContainerRegistry;
+use App\DigitalOcean\CustomImage;
 use App\DigitalOcean\Database;
 use App\DigitalOcean\Droplet;
 use App\DigitalOcean\FloatingIP;
+use App\DigitalOcean\Kubernetes;
+use App\DigitalOcean\LoadBalancer;
+use App\DigitalOcean\Resource;
 use App\DigitalOcean\Space;
 use App\DigitalOcean\Volume;
 use App\Services\DigitalOcean;
-use Illuminate\Support\Arr;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use LaravelZero\Framework\Commands\Command;
@@ -35,65 +41,147 @@ class DigitalOceanMonthlyPricing extends Command
      * Execute the console command.
      *
      * @return int
-     * @throws \Illuminate\Contracts\Container\BindingResolutionException
      */
     public function handle(): int
     {
-        $token = $this->argument('token');
-        $totals = new Collection();
+        $this->title("DigitalOcean Monthly Project Pricing");
 
+        $token = $this->argument('token');
         // Alerts
-        $this->alert('ALERT');
-        $this->warn('DigitalOcean Spaces API does not allow for the full computation of pricing. Actual pricing may vary!');
+        $this->alert('Some usage based pricing may vary.');
         $this->newLine();
 
+        $projects = $this->getProjectResources($token);
+
+        $this->printTable($projects);
+
+        return static::SUCCESS;
+    }
+
+    /**
+     * Function for project resource retrieval
+     *
+     * @param  string  $token
+     * @return \Illuminate\Support\Collection
+     */
+    protected function getProjectResources(string $token): Collection
+    {
+        $projects = new Collection();
+
+        // Price projects and their associated costs
+        $this->line('Pricing out projects');
         foreach ($this->digitalOceanApi->projects($token) as $project) {
             $this->line("Project <options=bold>{$project['name']}</> with UUID <options=bold>{$project['id']}</>", verbosity: 'normal');
 
-            $sum = 0;
-            $resourceCount = 0;
-            foreach ($this->digitalOceanApi->projectResources($token, $project['id']) as $resource) {
-                $this->line("\tResource: {$resource['links']['self']}", verbosity: 'v');
+            $projects->push(
+                Collection::make([
+                    'name' => $project['name'],
+                    'resources' => $this->digitalOceanApi->projectResources($token, $project['id'])->map(function ($resource) use ($token) {
+                        $this->line("\tResource: {$resource['links']['self']}", verbosity: 'v');
 
-                $price = 0;
-                if (Str::contains($resource['links']['self'], 'droplets')) {
-                    $price = Droplet::FromUrl($resource['links']['self'], $token)->getMonthlyCost();
-                } else if (Str::contains($resource['links']['self'], 'floating_ips')) {
-                    $price = FloatingIP::FromUrl($resource['links']['self'], $token)->getMonthlyCost();
-                } else if (Str::contains($resource['links']['self'], 'volumes')) {
-                    $price = Volume::FromUrl($resource['links']['self'], $token)->getMonthlyCost();
-                } else if (Str::contains($resource['links']['self'], 'databases')) {
-                    $price = Database::FromUrl($resource['links']['self'], $token)->getMonthlyCost();
-                } else if (Str::contains($resource['links']['self'], 'digitaloceanspaces')) {
-                    $price = Space::FromUrl($resource['links']['self'], $token)->getMonthlyCost();
-                } else if (Str::contains($resource['links']['self'], 'domains')) {
-                    // Can ignore
-                } else {
-                    $this->error("\t\t...Unknown resource type");
-                }
+                        $doResource = null;
+                        if (Str::contains($resource['links']['self'], 'apps')) { // App Platform
+                            $doResource = AppPlatform::FromUrl($resource['links']['self'], $token);
+                        } else if (Str::contains($resource['links']['self'], 'apps')) { // Container Registry
+                            $doResource = ContainerRegistry::FromUrl($resource['links']['self'], $token);
+                        } else if (Str::contains($resource['links']['self'], 'databases')) { // Databases
+                            $doResource = Database::FromUrl($resource['links']['self'], $token);
+                        } else if (Str::contains($resource['links']['self'], 'droplets')) { // Droplet
+                            $doResource = Droplet::FromUrl($resource['links']['self'], $token);
+                        } else if (Str::contains($resource['links']['self'], 'floating_ips')) { // Floating Ip
+                            $doResource = FloatingIP::FromUrl($resource['links']['self'], $token);
+                        } else if (Str::contains($resource['links']['self'], 'kubernetes')) { // Kubernetes
+                            $doResource = Kubernetes::FromUrl($resource['links']['self'], $token);
+                        } else if (Str::contains($resource['links']['self'], 'load_balancers')) { // Load Balancer
+                            $doResource = LoadBalancer::FromUrl($resource['links']['self'], $token);
+                        } else if (Str::contains($resource['links']['self'], 'digitaloceanspaces')) { // Spaces
+                            $doResource = Space::FromUrl($resource['links']['self'], $token);
+                        } else if (Str::contains($resource['links']['self'], 'volumes')) { // Volumes
+                            $doResource = Volume::FromUrl($resource['links']['self'], $token);
+                        } else if (Str::contains($resource['links']['self'], 'domains')) { // Domains
+                            // Can ignore
+                        } else {
+                            $this->error("\t\t...Unknown resource type{$resource['links']['self']}");
+                        }
 
-                $sum += $price;
-                $resourceCount += 1;
-            }
+                        return $doResource;
+                    })->collect(),
+                ])
+            );
+        }
 
-            $totals->push([
-                'client' => $project['name'],
-                'cost' => $sum,
-                'cost_formatted' => '$ '.number_format($sum, 2).' / month',
-                'cost_year_formatted' => '$ '.number_format($sum * 12, 2).' / year',
-                'resource_count' => $resourceCount,
-            ]);
+        // Price container registry if exists
+        $this->line('Pricing out container registry');
+        if ($data = $this->digitalOceanApi->containerRegistry($token)) {
+            $resource = ContainerRegistry::make($this->digitalOceanApi, $data, $token);
+            $projects->push(
+                Collection::make([
+                    'name' => 'Container Registry',
+                    'resources' => Collection::make([$resource]),
+                ])
+            );
+        }
+
+        // Price custom images
+        $this->line('Pricing out custom images');
+        $images = $this->digitalOceanApi->customImages($token);
+        if ($images->isNotEmpty()) {
+            $projects->push(
+                Collection::make([
+                    'name' => 'Custom Images',
+                    'resources' => $images->map(function ($image) use ($token) {
+                        return CustomImage::make($this->digitalOceanApi, $image, $token);
+                    })->collect()
+                ])
+            );
+        }
+
+        return $projects;
+    }
+
+    /**
+     * Print out the calculation information
+     *
+     * @param  \Illuminate\Support\Collection  $projects
+     * @return void
+     */
+    protected function printTable(Collection $projects): void
+    {
+        $total = $projects->sum(
+            fn(Collection $project) => $project->get('resources')->sum(fn(Resource $resource) => $resource->getMonthlyCost())
+        );
+
+        foreach ($projects as $project) {
+            $this->newLine();
+            $this->line("Project <fg=green;options=underscore>{$project['name']}</>");
+            $this->table(
+                ['Resource Name', 'Cost per Month (USD)'],
+                $project['resources']->map(function (Resource $resource) {
+                    return [
+                        $resource->getName(),
+                        '$ '.number_format($resource->getMonthlyCost(), 2),
+                    ];
+                })->toArray(),
+            );
+            $this->newLine();
         }
 
         $this->newLine();
+        // @formatter:off
         $this->table(
-            ['Client', 'Cost per Month (USD)', 'Cost per Year (USD)', 'Resource Count'],
-            $totals->map(fn(array $item) => Arr::only($item, ['client', 'cost_formatted', 'cost_year_formatted', 'resource_count'])),
+            ['Project', 'Cost per Month (USD)', 'Cost per Quarter (USD)', 'Cost per Year (USD)', 'Resource Count'],
+            $projects->map(function (Collection $project) {
+                return [
+                    $project->get('name'),
+                    '$ ' . number_format($project->get('resources')->sum(fn(Resource $resource) => $resource->getMonthlyCost()), 2) . ' / month',
+                    '$ ' . number_format($project->get('resources')->sum(fn(Resource $resource) => $resource->getMonthlyCost()), 2) * Carbon::MONTHS_PER_QUARTER . ' / quarter',
+                    '$ ' . number_format($project->get('resources')->sum(fn(Resource $resource) => $resource->getMonthlyCost()), 2) * Carbon::MONTHS_PER_YEAR . ' / year',
+                    $project->get('resources')->count(),
+                ];
+            })->toArray()
         );
-        $total = '$ '.number_format($totals->sum('cost'), 2);
-        $this->line("Total: <fg=green;options=bold>{$total}</>");
+        // @formatter:on
+        $this->line(sprintf('Total: <fg=green;options=bold>$ %s</>', number_format($total, 2)));
         $this->newLine();
-
-        return static::SUCCESS;
     }
 }
